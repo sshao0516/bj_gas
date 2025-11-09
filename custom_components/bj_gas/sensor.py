@@ -1,7 +1,7 @@
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from homeassistant.const import STATE_UNKNOWN, UnitOfVolume, UnitOfElectricPotential
-from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
+from homeassistant.components.sensor import SensorDeviceClass
+from homeassistant.const import STATE_UNKNOWN, UnitOfElectricPotential, UnitOfVolume
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 
@@ -10,16 +10,13 @@ GAS_SENSORS = {
         "name": "燃气费余额",
         "icon": "hass:cash-100",
         "unit_of_measurement": "元",
-        "attributes": ["last_update"]
+        "attributes": ["last_update"],
     },
-    "current_level": {
-        "name": "当前燃气阶梯",
-        "icon": "hass:stairs"
-    },
+    "current_level": {"name": "当前燃气阶梯", "icon": "hass:stairs"},
     "current_price": {
         "name": "当前气价",
         "icon": "hass:cash-100",
-        "unit_of_measurement": "元/m³"
+        "unit_of_measurement": "元/m³",
     },
     "current_level_remain": {
         "name": "当前阶梯剩余额度",
@@ -34,18 +31,18 @@ GAS_SENSORS = {
     "month_reg_qty": {
         "name": "当月用气量",
         "device_class": SensorDeviceClass.GAS,
-        "unit_of_measurement": UnitOfVolume.CUBIC_METERS
+        "unit_of_measurement": UnitOfVolume.CUBIC_METERS,
     },
     "battery_voltage": {
         "name": "气表电量",
         "device_class": SensorDeviceClass.BATTERY,
-        "unit_of_measurement": UnitOfElectricPotential.VOLT
+        "unit_of_measurement": UnitOfElectricPotential.VOLT,
     },
     "mtr_status": {
         "name": "阀门状态",
         "device_class": BinarySensorDeviceClass.RUNNING,
-        "unit_of_measurement": ""
-    }
+        "unit_of_measurement": "",
+    },
 }
 
 
@@ -140,14 +137,22 @@ class GASHistorySensor(GASBaseSensor):
     @property
     def name(self):
         try:
-            return self._coordinator.data.get(self._user_code).get("monthly_bills")[self._index].get("mon")
+            return (
+                self._coordinator.data.get(self._user_code)
+                .get("monthly_bills")[self._index]
+                .get("mon")
+            )
         except KeyError:
             return STATE_UNKNOWN
 
     @property
     def state(self):
         try:
-            return self._coordinator.data.get(self._user_code).get("monthly_bills")[self._index].get("regQty")
+            return (
+                self._coordinator.data.get(self._user_code)
+                .get("monthly_bills")[self._index]
+                .get("regQty")
+            )
         except KeyError:
             return STATE_UNKNOWN
 
@@ -155,8 +160,9 @@ class GASHistorySensor(GASBaseSensor):
     def extra_state_attributes(self):
         try:
             return {
-                "consume_bill": self._coordinator.data.get(self._user_code).get("monthly_bills")[self._index].get(
-                    "amt")
+                "consume_bill": self._coordinator.data.get(self._user_code)
+                .get("monthly_bills")[self._index]
+                .get("amt")
             }
         except KeyError:
             return {"consume_bill": 0.0}
@@ -182,14 +188,22 @@ class GASDailyBillSensor(GASBaseSensor):
     @property
     def name(self):
         try:
-            return self._coordinator.data.get(self._user_code).get("daily_bills")[self._index].get("day")[:10]
+            return (
+                self._coordinator.data.get(self._user_code)
+                .get("daily_bills")[self._index]
+                .get("day")[:10]
+            )
         except KeyError:
             return STATE_UNKNOWN
 
     @property
     def state(self):
         try:
-            return self._coordinator.data.get(self._user_code).get("daily_bills")[self._index].get("regQty")
+            return (
+                self._coordinator.data.get(self._user_code)
+                .get("daily_bills")[self._index]
+                .get("regQty")
+            )
         except KeyError:
             return STATE_UNKNOWN
 

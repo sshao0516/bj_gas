@@ -1,14 +1,20 @@
-import logging
+import asyncio
 import datetime
 import json
-import asyncio
+import logging
 
 _LOGGER = logging.getLogger(__name__)
 
-WEEK_QRY_URL = "https://zt.bjgas.com/bjgas-server/i/api/intelligent/getWeekQry?userCode="
+WEEK_QRY_URL = (
+    "https://zt.bjgas.com/bjgas-server/i/api/intelligent/getWeekQry?userCode="
+)
 STEP_QRY_URL = "https://zt.bjgas.com/bjgas-server/r/api?sysName=CCB&apiName=CM-MOB-IF07"
-YEAR_QRY_URL = "https://zt.bjgas.com/bjgas-server/i/api/intelligent/getYearQry?userCode="
-USER_INFO_URL = "https://zt.bjgas.com/bjgas-server/i/api/intelligent/queryUserInfo?userCode="
+YEAR_QRY_URL = (
+    "https://zt.bjgas.com/bjgas-server/i/api/intelligent/getYearQry?userCode="
+)
+USER_INFO_URL = (
+    "https://zt.bjgas.com/bjgas-server/i/api/intelligent/queryUserInfo?userCode="
+)
 
 
 class AuthFailed(Exception):
@@ -34,16 +40,18 @@ class GASData:
             "Accept-Language": "zh-cn, zh-Hans; q=0.9",
             "Accept-Encoding": "gzip, deflate, br",
             "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 "
-                          "(KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.7(0x1800072c) "
-                          "NetType/WIFI Language/zh_CN",
+            "(KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.7(0x1800072c) "
+            "NetType/WIFI Language/zh_CN",
             "Connection": "keep-alive",
-            "Authorization": f"Bearer {self._token}"
+            "Authorization": f"Bearer {self._token}",
         }
         return headers
 
     async def async_get_week(self, user_code):
         headers = self.common_headers()
-        r = await self._session.get(WEEK_QRY_URL + user_code, headers=headers, timeout=10)
+        r = await self._session.get(
+            WEEK_QRY_URL + user_code, headers=headers, timeout=10
+        )
         if r.status == 200:
             result = json.loads(await r.read())
             if result["success"]:
@@ -56,7 +64,9 @@ class GASData:
 
     async def async_get_year(self, user_code):
         headers = self.common_headers()
-        r = await self._session.get(YEAR_QRY_URL + user_code, headers=headers, timeout=10)
+        r = await self._session.get(
+            YEAR_QRY_URL + user_code, headers=headers, timeout=10
+        )
         if r.status == 200:
             result = json.loads(await r.read())
             if result["success"]:
@@ -69,7 +79,9 @@ class GASData:
 
     async def async_get_userinfo(self, user_code):
         headers = self.common_headers()
-        r = await self._session.get(USER_INFO_URL + user_code, headers=headers, timeout=10)
+        r = await self._session.get(
+            USER_INFO_URL + user_code, headers=headers, timeout=10
+        )
         if r.status == 200:
             result = json.loads(await r.read())
             if result["success"]:
@@ -90,16 +102,22 @@ class GASData:
         headers["Content-Type"] = "application/json;charset=UTF-8"
         headers["Origin"] = "file://"
         json_date = {"CM-MOB-IF07": {"input": {"UniUserCode": f"{user_code}"}}}
-        r = await self._session.post(STEP_QRY_URL, headers=headers, json=json_date, timeout=10)
+        r = await self._session.post(
+            STEP_QRY_URL, headers=headers, json=json_date, timeout=10
+        )
         if r.status == 200:
             result = json.loads(await r.read())
             data = result["soapenv:Envelope"]["soapenv:Body"]["CM-MOB-IF07"]["output"]
             if float(data["Step1LeftoverQty"]) > 0:
                 self._info[user_code]["current_level"] = 1
-                self._info[user_code]["current_level_remain"] = float(data["Step1LeftoverQty"])
+                self._info[user_code]["current_level_remain"] = float(
+                    data["Step1LeftoverQty"]
+                )
             else:
                 self._info[user_code]["current_level"] = 2
-                self._info[user_code]["current_level_remain"] = float(data["Step2LeftoverQty"])
+                self._info[user_code]["current_level_remain"] = float(
+                    data["Step2LeftoverQty"]
+                )
             self._info[user_code]["year_consume"] = float(data["TotalSq"])
         else:
             raise InvalidData(f"async_get_step response status_code = {r.status}")
@@ -110,7 +128,7 @@ class GASData:
             asyncio.create_task(self.async_get_userinfo(self._user_code)),
             asyncio.create_task(self.async_get_week(self._user_code)),
             asyncio.create_task(self.async_get_year(self._user_code)),
-            asyncio.create_task(self.async_get_step(self._user_code))
+            asyncio.create_task(self.async_get_step(self._user_code)),
         ]
         await asyncio.wait(tasks)
         _LOGGER.debug(f"Data {self._info}")
